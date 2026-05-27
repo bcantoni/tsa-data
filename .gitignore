@@ -1,0 +1,6 @@
+tsa.db
+tsa.db-journal
+__pycache__/
+.venv/
+*.pyc
+.claude/
