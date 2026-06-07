@@ -21,6 +21,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false   # deps are PEP 723 inline (no lockfile to key a cache on)
 
       - name: Fetch current YTD and export CSV
         run: uv run tsa.py update
