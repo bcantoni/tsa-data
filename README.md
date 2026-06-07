@@ -10,10 +10,11 @@ and an `update` mode you can re-run anytime to pick up new days.
 
 | File           | Purpose                                                                 |
 | -------------- | ----------------------------------------------------------------------- |
-| `tsa.py`       | Scraper + SQLite writer. Two subcommands: `update` and `backfill`.      |
+| `tsa.py`       | Scraper + SQLite writer. Subcommands: `update`, `backfill`, `export`.   |
 | `chart.py`     | Generates `chart.png` (one line per year, complete months only).        |
 | `CLAUDE.md`    | Short notes for future contributors / Claude Code sessions.             |
 | `tsa.db`       | SQLite database (gitignored — built by running the script).             |
+| `tsa.csv`      | Flat `date,passengers` export, rewritten on every run (gitignored).     |
 | `chart.png`    | Pre-rendered monthly chart, committed for quick viewing.                |
 
 Both Python files are [PEP 723](https://peps.python.org/pep-0723/)
@@ -33,11 +34,14 @@ uv run tsa.py backfill --start 2019 --end 2025
 # Fetch the current YTD page (safe to re-run anytime; uses upsert):
 uv run tsa.py update
 
+# Re-write tsa.csv from the DB without fetching anything:
+uv run tsa.py export
+
 # Render the chart from whatever's in the DB:
 uv run chart.py
 ```
 
-Both commands print a per-page summary like:
+`update` and `backfill` print a per-page summary like:
 
 ```
 2019: parsed 365 rows  (inserted=365, updated=0, unchanged=0)
@@ -60,6 +64,23 @@ CREATE INDEX idx_pv_date ON passenger_volumes(date);
 `update` and `backfill` both **upsert**: rows whose `passengers` value
 changed are overwritten (TSA occasionally revises numbers), identical rows
 are left alone, and re-runs are safe.
+
+## CSV export
+
+Every `update` and `backfill` run (and the standalone `export` subcommand)
+rewrites `tsa.csv` from scratch — the whole table, oldest date first, with a
+two-column `date,passengers` layout:
+
+```csv
+date,passengers
+2019-01-01,2201765
+2019-01-02,2424225
+...
+```
+
+The file is overwritten in full each time (no append), so it always
+mirrors the current contents of `tsa.db`. Use `--csv PATH` to write
+somewhere other than `./tsa.csv`.
 
 ## Accessing the data
 

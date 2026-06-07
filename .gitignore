@@ -1,5 +1,6 @@
 tsa.db
 tsa.db-journal
+tsa.csv
 __pycache__/
 .venv/
 *.pyc

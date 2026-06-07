@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import sqlite3
 import sys
 import time
@@ -105,6 +106,21 @@ def upsert(
     return inserted, updated, unchanged
 
 
+def export_csv(conn: sqlite3.Connection, path: Path) -> int:
+    """Write all rows to a CSV, oldest first, overwriting any existing file.
+
+    Returns the number of data rows written.
+    """
+    rows = conn.execute(
+        "SELECT date, passengers FROM passenger_volumes ORDER BY date ASC"
+    ).fetchall()
+    with open(path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["date", "passengers"])
+        writer.writerows(rows)
+    return len(rows)
+
+
 def cmd_update(args: argparse.Namespace) -> int:
     session = requests.Session()
     session.headers["User-Agent"] = USER_AGENT
@@ -117,6 +133,8 @@ def cmd_update(args: argparse.Namespace) -> int:
             f"{CURRENT_URL}: parsed {len(rows)} rows  "
             f"(inserted={ins}, updated={upd}, unchanged={same})"
         )
+        n = export_csv(conn, args.csv)
+        print(f"wrote {n} rows to {args.csv}")
     finally:
         conn.close()
     return 0
@@ -150,6 +168,18 @@ def cmd_backfill(args: argparse.Namespace) -> int:
             f"backfill done: inserted={total_ins}, updated={total_upd}, "
             f"unchanged={total_same}"
         )
+        n = export_csv(conn, args.csv)
+        print(f"wrote {n} rows to {args.csv}")
+    finally:
+        conn.close()
+    return 0
+
+
+def cmd_export(args: argparse.Namespace) -> int:
+    conn = init_db(args.db)
+    try:
+        n = export_csv(conn, args.csv)
+        print(f"wrote {n} rows to {args.csv}")
     finally:
         conn.close()
     return 0
@@ -163,6 +193,12 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("tsa.db"),
         help="Path to the SQLite database (default: tsa.db)",
     )
+    parser.add_argument(
+        "--csv",
+        type=Path,
+        default=Path("tsa.csv"),
+        help="Path to the CSV export (default: tsa.csv)",
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_update = sub.add_parser("update", help="Fetch current YTD page and upsert")
@@ -172,6 +208,9 @@ def main(argv: list[str] | None = None) -> int:
     p_back.add_argument("--start", type=int, default=2019)
     p_back.add_argument("--end", type=int, default=2025)
     p_back.set_defaults(func=cmd_backfill)
+
+    p_export = sub.add_parser("export", help="Write the DB to CSV (no fetch)")
+    p_export.set_defaults(func=cmd_export)
 
     args = parser.parse_args(argv)
     return args.func(args)

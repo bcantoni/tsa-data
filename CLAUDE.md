@@ -14,8 +14,11 @@ uv run tsa.py backfill --start 2019 --end 2025
 # Pull the current YTD page (safe to re-run; uses upsert):
 uv run tsa.py update
 
-# Custom DB path:
-uv run tsa.py --db /tmp/foo.db update
+# Re-export tsa.csv from the DB without fetching:
+uv run tsa.py export
+
+# Custom DB / CSV paths:
+uv run tsa.py --db /tmp/foo.db --csv /tmp/foo.csv update
 ```
 
 `tsa.py` is a PEP 723 single-file script — `uv run` resolves
@@ -37,6 +40,14 @@ passenger_volumes(
 `update` and `backfill` both upsert: rows whose `passengers` value changed
 are overwritten; identical rows are left alone. Counts (inserted / updated /
 unchanged) are printed per page.
+
+## CSV export
+
+`update` and `backfill` rewrite `tsa.csv` (default path; override with
+`--csv`) after upserting, and the standalone `export` subcommand does the
+same without fetching. The file is fully overwritten each run — all rows,
+`date ASC`, two columns only: `date,passengers`. CSV uses stdlib `csv`, so
+no new dependency was added.
 
 ## Gotchas
 
