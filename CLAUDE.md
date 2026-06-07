@@ -63,6 +63,15 @@ i.e. no commas/signs/decimals), and dates are unique and strictly
 ascending. Run `uv run tsa.py update && uv run validate.py` to export then
 verify.
 
+## Automation
+
+`.github/workflows/daily.yml` runs daily (12:00 UTC) + on manual dispatch:
+`update` → `validate.py` → commit `tsa.db` + `tsa.csv` back to the repo. Both
+data files are **committed** (not gitignored) — the committed `tsa.db` is the
+source of truth the incremental `update` builds on. The commit step is gated
+on `tsa.csv` changing, so no-op days don't churn the binary DB. If
+`validate.py` fails, the job stops before committing.
+
 ## Gotchas
 
 - **The TSA site 403s any non-browser User-Agent.** `tsa.py` sets a desktop

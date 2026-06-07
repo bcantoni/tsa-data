@@ -1,0 +1,41 @@
+name: Daily TSA update
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # 12:00 UTC daily; TSA data lags ~2 days so exact time is not critical
+  workflow_dispatch:        # allow manual runs from the Actions tab
+
+# Prevent overlapping runs from racing on the commit/push
+concurrency:
+  group: daily-tsa
+  cancel-in-progress: false
+
+permissions:
+  contents: write           # needed to push the data commit back
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Fetch current YTD and export CSV
+        run: uv run tsa.py update
+
+      - name: Validate the CSV (quality gate)
+        run: uv run validate.py
+
+      - name: Commit updated data if the CSV changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tsa.db tsa.csv
+          if git diff --cached --quiet -- tsa.csv; then
+            echo "No CSV change; nothing to commit."
+          else
+            git commit -m "Daily TSA update ($(date -u +%Y-%m-%d))"
+            git push
+          fi

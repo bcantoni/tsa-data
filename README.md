@@ -14,8 +14,8 @@ and an `update` mode you can re-run anytime to pick up new days.
 | `validate.py`  | Quality gate: checks `tsa.csv` is clean `date,passengers` rows.         |
 | `chart.py`     | Generates `chart.png` (one line per year, complete months only).        |
 | `CLAUDE.md`    | Short notes for future contributors / Claude Code sessions.             |
-| `tsa.db`       | SQLite database (gitignored — built by running the script).             |
-| `tsa.csv`      | Flat `date,passengers` export, rewritten on every run (gitignored).     |
+| `tsa.db`       | SQLite database (committed; refreshed daily by GitHub Actions).         |
+| `tsa.csv`      | Flat `date,passengers` export (committed; refreshed daily).             |
 | `chart.png`    | Pre-rendered monthly chart, committed for quick viewing.                |
 
 Both Python files are [PEP 723](https://peps.python.org/pep-0723/)
@@ -106,6 +106,23 @@ file other than `./tsa.csv`:
 ```bash
 uv run validate.py path/to/other.csv
 ```
+
+## Automation
+
+[`.github/workflows/daily.yml`](.github/workflows/daily.yml) runs once a day
+(12:00 UTC) and can also be triggered manually from the **Actions** tab. Each
+run:
+
+1. `uv run tsa.py update` — fetches the current YTD page and upserts into the
+   committed `tsa.db`, then rewrites `tsa.csv`.
+2. `uv run validate.py` — quality gate; a failure fails the job *before*
+   anything is committed.
+3. Commits `tsa.db` + `tsa.csv` back to the repo, but only when `tsa.csv`
+   actually changed (so no-op days don't churn the binary DB).
+
+Because the DB is committed, the daily `update` builds incrementally on the
+full history rather than starting empty. TSA publishes with a ~2-day lag, so
+the most recent day or two may not appear until a later run.
 
 ## Accessing the data
 
