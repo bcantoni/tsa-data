@@ -11,6 +11,7 @@ and an `update` mode you can re-run anytime to pick up new days.
 | File           | Purpose                                                                 |
 | -------------- | ----------------------------------------------------------------------- |
 | `tsa.py`       | Scraper + SQLite writer. Subcommands: `update`, `backfill`, `export`.   |
+| `validate.py`  | Quality gate: checks `tsa.csv` is clean `date,passengers` rows.         |
 | `chart.py`     | Generates `chart.png` (one line per year, complete months only).        |
 | `CLAUDE.md`    | Short notes for future contributors / Claude Code sessions.             |
 | `tsa.db`       | SQLite database (gitignored — built by running the script).             |
@@ -36,6 +37,9 @@ uv run tsa.py update
 
 # Re-write tsa.csv from the DB without fetching anything:
 uv run tsa.py export
+
+# Validate the CSV (exits non-zero if anything is off):
+uv run validate.py
 
 # Render the chart from whatever's in the DB:
 uv run chart.py
@@ -81,6 +85,27 @@ date,passengers
 The file is overwritten in full each time (no append), so it always
 mirrors the current contents of `tsa.db`. Use `--csv PATH` to write
 somewhere other than `./tsa.csv`.
+
+## Validating the CSV
+
+`validate.py` is an extra quality gate over `tsa.csv`. It exits `0` when
+the file is clean and `1` (with per-line details on stderr) otherwise, so
+it drops into CI or a `&&` chain after an export:
+
+```bash
+uv run tsa.py update && uv run validate.py
+```
+
+It checks that the file parses as CSV, that the header is exactly
+`date,passengers`, and that every data row is exactly two columns: a strict
+ISO `YYYY-MM-DD` calendar date and a plain non-negative integer (no commas,
+signs, or decimals). It also confirms dates are unique and strictly
+ascending, matching how `export` writes them. Pass a path to validate a
+file other than `./tsa.csv`:
+
+```bash
+uv run validate.py path/to/other.csv
+```
 
 ## Accessing the data
 

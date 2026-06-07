@@ -17,6 +17,9 @@ uv run tsa.py update
 # Re-export tsa.csv from the DB without fetching:
 uv run tsa.py export
 
+# Validate tsa.csv (exits non-zero on any problem):
+uv run validate.py
+
 # Custom DB / CSV paths:
 uv run tsa.py --db /tmp/foo.db --csv /tmp/foo.csv update
 ```
@@ -48,6 +51,17 @@ unchanged) are printed per page.
 same without fetching. The file is fully overwritten each run — all rows,
 `date ASC`, two columns only: `date,passengers`. CSV uses stdlib `csv`, so
 no new dependency was added.
+
+## CSV validation
+
+`validate.py` (stdlib-only PEP 723 script) is a quality gate over
+`tsa.csv`. Defaults to `./tsa.csv`; pass a path to override. Exits `0` when
+clean, `1` (with per-line problems on stderr) otherwise. Checks: parses as
+CSV, header is exactly `date,passengers`, every row is exactly two columns
+(strict ISO `YYYY-MM-DD` date + non-negative integer via `str.isdigit`,
+i.e. no commas/signs/decimals), and dates are unique and strictly
+ascending. Run `uv run tsa.py update && uv run validate.py` to export then
+verify.
 
 ## Gotchas
 
