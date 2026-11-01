@@ -2,7 +2,8 @@ name: Daily TSA update
 
 on:
   schedule:
-    - cron: "0 12 * * *"   # 12:00 UTC daily; TSA data lags ~2 days so exact time is not critical
+    - cron: "0 8 * * 1-5"
+      timezone: 'America/Los_Angeles'
   workflow_dispatch:        # allow manual runs from the Actions tab
 
 # Prevent overlapping runs from racing on the commit/push
