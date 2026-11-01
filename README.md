@@ -1,12 +1,19 @@
-# tsa-data
+# TSA Passenger Data
 
 Scrapes [TSA checkpoint passenger volumes](https://www.tsa.gov/travel/passenger-volumes)
-into a local SQLite database, with a one-time backfill mode for 2019–2025
-and an `update` mode you can re-run anytime to pick up new days.
+into a local SQLite database and CSV file, both of which are committed.
+
+The script has a "backfill" mode I used to catch up on the older years 2019–2025.
+
+A cron scheduled action runs the script in "update" mode to pick up new days' data.
+
+The technique of committing data automatically was inspired by [simonw/sf-tree-history](https://github.com/simonw/sf-tree-history).
 
 ![Monthly passenger volumes by year, 2019–2026](chart.png)
 
 ## What's in here
+
+My idea, Claude's code.
 
 | File           | Purpose                                                                 |
 | -------------- | ----------------------------------------------------------------------- |
@@ -109,8 +116,8 @@ uv run validate.py path/to/other.csv
 
 ## Automation
 
-[`.github/workflows/daily.yml`](.github/workflows/daily.yml) runs once a day
-(12:00 UTC) and can also be triggered manually from the **Actions** tab. Each
+[`.github/workflows/daily.yml`](.github/workflows/daily.yml) runs every
+weekday and can also be triggered manually from the **Actions** tab. Each
 run:
 
 1. `uv run tsa.py update` — fetches the current YTD page and upserts into the
