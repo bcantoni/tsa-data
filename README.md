@@ -13,7 +13,8 @@ The technique of committing data automatically was inspired by [simonw/sf-tree-h
 
 ## What's in here
 
-My idea, Claude's code.
+I created this with Claude Code while experimenting with remote-control sessions
+from mobile: [Remote Control: Copilot vs Claude Code](https://www.cantoni.org/2026/05/27/remote-control-copilot-vs-claude-code/).
 
 | File           | Purpose                                                                 |
 | -------------- | ----------------------------------------------------------------------- |
